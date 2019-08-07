@@ -5,6 +5,8 @@ import { TokenStorage, IToken, ICode, IError } from './token.manager';
 import { Dialog } from '../helpers/dialog';
 import { CustomError } from '../errors/custom.error';
 
+console.log('This is a test log');
+
 /**
  * Custom error type to handle OAuth specific errors.
  */
