@@ -50,6 +50,11 @@ export interface IEndpointConfiguration {
   // Additional object for query parameters.
   // Will be appending them after encoding the values.
   extraQueryParameters?: { [index: string]: string };
+
+  // For Edge (pre-chromium build)
+  // the url that will loaded when the dialog initially opens
+  // Should be a URL that loads a page with a redirect
+  proxyUrl?: string;
 }
 
 /**
@@ -206,12 +211,14 @@ export class EndpointStorage extends Storage<IEndpointConfiguration> {
    */
   static getLoginParams(endpointConfig: IEndpointConfiguration): {
     url: string,
-    state: number
+    state: number,
+    proxyUrl: string
   } {
     let scope = (endpointConfig.scope) ? encodeURIComponent(endpointConfig.scope) : null;
     let resource = (endpointConfig.resource) ? encodeURIComponent(endpointConfig.resource) : null;
     let state = endpointConfig.state && Utilities.generateCryptoSafeRandom();
     let nonce = endpointConfig.nonce && Utilities.generateCryptoSafeRandom();
+    let proxyUrl = endpointConfig.proxyUrl;
 
     let urlSegments = [
       `response_type=${endpointConfig.responseType}`,
@@ -237,8 +244,17 @@ export class EndpointStorage extends Storage<IEndpointConfiguration> {
       }
     }
 
+    const url = `${endpointConfig.baseUrl}${endpointConfig.authorizeUrl}?${urlSegments.join('&')}`;
+
+    // we need to include the redirect_uri here because it contains the original state value
+    // devs should take care and check the value of the redirect_uri in their app
+    if (proxyUrl && typeof proxyUrl === 'string') {
+      proxyUrl += `?isProxy=true&redirect_uri=${encodeURIComponent(url)}`;
+    }
+
     return {
-      url: `${endpointConfig.baseUrl}${endpointConfig.authorizeUrl}?${urlSegments.join('&')}`,
+      url: url,
+      proxyUrl: proxyUrl,
       state: state
     };
   }

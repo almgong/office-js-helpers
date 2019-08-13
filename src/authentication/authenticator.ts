@@ -86,8 +86,9 @@ export class Authenticator {
    */
   static isAuthDialog(useMicrosoftTeams: boolean = false): boolean {
     // If the url doesn't contain an access_token, code, or error then return false.
+    // If the url is a proxy URL, return false.
     // This is in scenarios where we don't want to automatically control what happens to the dialog.
-    if (!/(access_token|code|error|state)/gi.test(location.href)) {
+    if (!/(access_token|code|error|state)/gi.test(location.href) || /isProxy=true/gi.test(location.href)) {
       return false;
     }
 
@@ -146,11 +147,15 @@ export class Authenticator {
     }
 
     // Set the authentication state to redirect and begin the auth flow.
-    let { state, url } = EndpointStorage.getLoginParams(endpoint);
+    let { state, url, proxyUrl } = EndpointStorage.getLoginParams(endpoint);
 
     // Launch the dialog and perform the OAuth flow. We launch the dialog at the redirect
     // url where we expect the call to isAuthDialog to be available.
-    let redirectUrl = await new Dialog<string>(url, 1024, 768, useMicrosoftTeams).result;
+    //
+    // if a proxy url is specified, open that instead
+    const dialogUrl = proxyUrl || url;
+    console.log('opening dialog at: ', dialogUrl);
+    let redirectUrl = await new Dialog<string>(dialogUrl, 1024, 768, useMicrosoftTeams).result;
 
     // Try and extract the result and pass it along.
     return this._handleTokenResult(redirectUrl, endpoint, state);
