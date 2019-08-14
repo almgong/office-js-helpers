@@ -1,7 +1,7 @@
 {
   "name": "@allen.gong/office-js-helpers",
   "description": "A fork of the collection of helpers to simplify development of Office Add-ins & Microsoft Teams Tabs",
-  "version": "1.0.6",
+  "version": "1.0.21",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/almgong/office-js-helpers.git"

@@ -84,6 +84,7 @@ export class Dialog<T> {
   size: IDialogSize;
 
   private _addinDialog<T>(): Promise<T> {
+    console.log('result for addindialog reached');
     return new Promise((resolve, reject) => {
       Office.context.ui.displayDialogAsync(this.url, { width: this.size.width$, height: this.size.height$ }, (result: Office.AsyncResult) => {
         if (result.status === Office.AsyncResultStatus.Failed) {
@@ -92,9 +93,16 @@ export class Dialog<T> {
         else {
           let dialog = result.value as Office.DialogHandler;
           dialog.addEventHandler(Office.EventType.DialogMessageReceived, args => {
+            console.log('message received!', args);
             let result = this._safeParse(args.message) as T;
-            resolve(result);
-            dialog.close();
+
+            if (typeof result === 'string') {
+              resolve(result);
+              dialog.close();
+            }
+            else {
+              console.log('would normally have called close, but did not receive a real message');
+            }
           });
 
           dialog.addEventHandler(Office.EventType.DialogEventReceived, args => {
@@ -123,11 +131,22 @@ export class Dialog<T> {
     return new Promise((resolve, reject) => {
       try {
         const options = 'width=' + this.size.width + ',height=' + this.size.height + this._windowFeatures;
-        window.open(this.url, this.url, options);
+
         if (Utilities.isIEOrEdge) {
           this._pollLocalStorageForToken(resolve, reject);
+          console.log('polling for localstorage now...');
+
+          Office.context.ui.displayDialogAsync(this.url, { width: this.size.width$, height: this.size.height$ }, (result: Office.AsyncResult) => {
+            if (result.status === Office.AsyncResultStatus.Failed) {
+              reject(new DialogError(result.error.message, result.error));
+            }
+            else {
+              console.log('Successfully opened dialog used async', this.url);
+            }
+          });
         }
         else {
+          window.open(this.url, this.url, options);
           const handler = event => {
             if (event.origin === location.origin) {
               window.removeEventListener('message', handler, false);
@@ -148,6 +167,7 @@ export class Dialog<T> {
     const POLL_INTERVAL = 400;
     let interval = setInterval(() => {
       try {
+        // localStorage.setItem('temp', '1');
         const data = localStorage.getItem(Dialog.key);
         if (!(data == null)) {
           clearInterval(interval);
@@ -231,6 +251,7 @@ export class Dialog<T> {
       return result.value;
     }
     catch (_e) {
+      console.log('Warning! Unable to parse message: ', data);
       return data;
     }
   }

@@ -226,6 +226,7 @@ export class Authenticator {
 
   private _handleTokenResult(redirectUrl: string, endpoint: IEndpointConfiguration, state: number) {
     let result = Authenticator.getUrlParams(redirectUrl, endpoint.redirectUrl);
+    console.log('token result!', result, 'expected state', state);
     if (result == null) {
       throw new AuthError('No access_token or code could be parsed.');
     }
